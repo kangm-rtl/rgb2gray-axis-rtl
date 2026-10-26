@@ -1,127 +1,83 @@
-\# RGB to Grayscale RTL with AXI4-Stream
+# RGB to Grayscale RTL with AXI4-Stream
 
-
-
-\## Overview
-
-
+## Overview
 
 This project implements an RGB-to-grayscale pixel conversion module using Verilog RTL and an AXI4-Stream-style ready/valid interface.
 
-
-
 The project is intended as an entry-level RTL/FPGA portfolio project.
 
+## Design
 
+- Input pixel: 24-bit RGB
+- Output pixel: 8-bit grayscale
+- Red channel: `s_axis_tdata[23:16]`
+- Green channel: `s_axis_tdata[15:8]`
+- Blue channel: `s_axis_tdata[7:0]`
+- Input/output flow control: `TVALID` and `TREADY`
+- End-of-line marker: `TLAST` (project convention)
+- Reset: Active-low `aresetn`
 
-\## Design
+### Grayscale Calculation
 
+`Y = floor((77*R + 150*G + 29*B) / 256)`
 
+The fractional part is discarded, and the result is represented as an 8-bit unsigned value.
 
-\- Input pixel: 24-bit RGB
+## Files
 
-\- Output pixel: 8-bit grayscale
+- `rtl/rgb2gray_axis.v` — RTL implementation
+- `sim/rgb2gray_axis_tb.v` — simulation testbench
 
-\- Red channel: `s\_axis\_tdata\[23:16]`
+## Tools
 
-\- Green channel: `s\_axis\_tdata\[15:8]`
+- Verilog HDL
+- AMD Xilinx Vivado
+- Vivado XSim behavioral simulation
 
-\- Blue channel: `s\_axis\_tdata\[7:0]`
+## Verification Results
 
-\- Input/output flow control: `TVALID` and `TREADY`
+The following test cases passed in Vivado behavioral simulation.
 
-\- End-of-line marker: `TLAST` (project convention)
+| Test | Expected result | Status |
+|---|---|---|
+| Black pixel | 0 | PASS |
+| White pixel | 255 | PASS |
+| Red pixel | 76 | PASS |
+| Green pixel | 149 | PASS |
+| Blue pixel | 28 | PASS |
+| Output backpressure hold | Output data remains stable while stalled | PASS |
+| Input backpressure hold | Input is not accepted while `TREADY` is low | PASS |
+| Backpressure recovery | Transfer resumes after the stall | PASS |
+| `TLAST` propagation | `TLAST` is propagated to output | PASS |
+| Consecutive pixel 1 | Black → 0 | PASS |
+| Consecutive pixel 2 | Red → 76 | PASS |
+| Consecutive pixel 3 | Green → 149 | PASS |
+| Consecutive pixel 4 | Blue → 28 | PASS |
 
+- Simulator: Vivado XSim
+- Testbench: `sim/rgb2gray_axis_tb.v`
+- RTL: `rtl/rgb2gray_axis.v`
+- Simulation completed at 230 ns.
 
+These tests cover the listed cases only; exhaustive input-space verification has not been performed.
 
-Grayscale calculation:
+## Synthesis Results
 
+- Target device: `xc7z020clg400-1`
+- Synthesis status: Completed successfully
 
+### Resource Utilization
 
-`Y = (77\*R + 150\*G + 29\*B) / 256`
+| Resource | Used |
+|---|---:|
+| Slice LUTs | 90 |
+| Slice Registers | 10 |
 
+## Timing Summary
 
-
-The fractional part is discarded.
-
-
-
-\## Files
-
-
-
-\- `rtl/rgb2gray\_axis.v` — RTL implementation
-
-\- `sim/rgb2gray\_axis\_tb.v` — simulation testbench
-
-
-
-\## Simulation Tests
-
-
-
-The following test cases have passed in Vivado behavioral simulation:
-
-
-
-\- Black pixel: RGB `(0, 0, 0)` → grayscale `0`
-
-\- White pixel: RGB `(255, 255, 255)` → grayscale `255`
-
-\- Red pixel: RGB `(255, 0, 0)` → grayscale `76`
-
-\- Green pixel: RGB `(0, 255, 0)` → grayscale `149`
-
-\- Blue pixel: RGB `(0, 0, 255)` → grayscale `28`
-
-\- Basic output hold test during backpressure
-
-\- `TLAST` propagation test
-
-\- Four consecutive pixel tests
-
-
-
-\## Tools
-
-
-
-\- Verilog HDL
-
-\- AMD Xilinx Vivado
-
-\- Behavioral simulation
-
-
-
-\## Current Limitations and Next Steps
-
-
-
-\- Expand AXI4-Stream verification, including more complex backpressure scenarios.
-
-\- Verify reset behavior and additional input cases.
-
-\- Run synthesis and record FPGA resource utilization.
-
-\- Review timing reports after synthesis/implementation.
-
-
-
-Hardware-board validation have not yet been documented in this repository.
-
-## Synthesis and Timing Results
-
-### Clock Constraint
 - Clock name: `aclk`
-- Clock period: 10.000 ns
-- Clock frequency: 100 MHz (constraint setting)
-
-### Synthesis Resource Utilization
-- Slice LUTs: 90
-- Slice Registers: 10
-
-### Timing Summary
+- Clock period constraint: 10.000 ns
+- Clock frequency constraint: 100 MHz
 - Worst Negative Slack (WNS): +7.572 ns
 - Total Negative Slack (TNS): 0.000 ns
 - Worst Hold Slack (WHS): +0.480 ns
@@ -129,8 +85,25 @@ Hardware-board validation have not yet been documented in this repository.
 - Setup failing endpoints: 0
 - Hold failing endpoints: 0
 
-### Limitations
-- Timing results are based on the current 100 MHz clock constraint.
-- Input and output delay constraints have not yet been fully defined.
+### Timing Limitations
+
 - These results are from synthesis-stage timing analysis.
-- Post-implementation timing analysis and hardware validation remain future work.
+- Input and output delay constraints have not yet been fully defined.
+- Post-implementation timing analysis has not been completed.
+- Hardware-board validation remains future work.
+
+## Current Status and Next Steps
+
+Completed:
+- RTL implementation
+- Behavioral simulation of the listed test cases
+- Synthesis
+- Synthesis resource utilization review
+- Synthesis-stage timing report review
+
+Next steps:
+- Expand AXI4-Stream verification with additional backpressure scenarios.
+- Add more reset and input corner-case tests.
+- Define appropriate input and output timing constraints.
+- Run implementation and review post-implementation timing.
+- Validate the design on hardware.
