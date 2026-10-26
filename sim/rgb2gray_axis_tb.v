@@ -46,10 +46,6 @@ module rgb2gray_axis_tb;
         s_axis_tlast  = 1'b0;
         m_axis_tready = 1'b1;
 
-        #20;
-        aresetn = 1'b1;
-
-       
         // Release reset
         #20;
         aresetn = 1'b1;
@@ -67,7 +63,7 @@ module rgb2gray_axis_tb;
         // Check grayscale output
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd0) begin
-            $error("FAIL: Black pixel test");
+            $fatal(1, "FAIL: Black pixel test");
         end
         else begin
             $display("PASS: Black pixel test");
@@ -90,7 +86,7 @@ module rgb2gray_axis_tb;
 
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd255) begin
-            $error("FAIL: White pixel test");
+            $fatal(1, "FAIL: White pixel test");
         end
         else begin
             $display("PASS: White pixel test");
@@ -108,15 +104,56 @@ module rgb2gray_axis_tb;
 
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd255) begin
-            $error("FAIL: Backpressure hold test");
+            $fatal(1, "FAIL: Backpressure hold test");
         end
         else begin
             $display("PASS: Backpressure hold test");
         end
 
-        // Release backpressure
+        
+        // Test input backpressure:
+        // The white pixel is still waiting at the output.
+        // Present a red pixel while the receiver is not ready.
+
+        @(negedge aclk);
+        s_axis_tdata  = 24'hFF0000;
+        s_axis_tvalid = 1'b1;
+        s_axis_tlast  = 1'b0;
+
+        // The red pixel must not be accepted while stalled.
+        @(posedge aclk);
+        #1;
+
+        if (s_axis_tready !== 1'b0 ||
+            m_axis_tvalid !== 1'b1 ||
+            m_axis_tdata !== 8'd255 ||
+            m_axis_tlast !== 1'b0) begin
+            $fatal(1, "FAIL: Input backpressure hold test");
+        end
+        else begin
+            $display("PASS: Input backpressure hold test");
+        end
+
+        // Release backpressure.
+        // The waiting red pixel should now be accepted.
         @(negedge aclk);
         m_axis_tready = 1'b1;
+
+        @(posedge aclk);
+        #1;
+
+        if (m_axis_tvalid !== 1'b1 ||
+            m_axis_tdata !== 8'd76 ||
+            m_axis_tlast !== 1'b0) begin
+            $fatal(1, "FAIL: Backpressure recovery test");
+        end
+        else begin
+            $display("PASS: Backpressure recovery test");
+        end
+
+        // Stop sending the red pixel.
+        @(negedge aclk);
+        s_axis_tvalid = 1'b0;
 
       
         // Test RED pixel: RGB = (255, 0, 0)
@@ -128,7 +165,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd76) begin
-            $error("FAIL: Red pixel test");
+            $fatal(1, "FAIL: Red pixel test");
         end
         else begin
             $display("PASS: Red pixel test");
@@ -146,7 +183,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd149) begin
-            $error("FAIL: Green pixel test");
+            $fatal(1, "FAIL: Green pixel test");
         end
         else begin
             $display("PASS: Green pixel test");
@@ -164,7 +201,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd28) begin
-            $error("FAIL: Blue pixel test");
+            $fatal(1, "FAIL: Blue pixel test");
         end
         else begin
             $display("PASS: Blue pixel test");
@@ -184,7 +221,7 @@ module rgb2gray_axis_tb;
 
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tlast !== 1'b1) begin
-            $error("FAIL: TLAST propagation test");
+            $fatal(1, "FAIL: TLAST propagation test");
         end
         else begin
             $display("PASS: TLAST propagation test");
@@ -209,7 +246,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd0)
-            $error("FAIL: Consecutive pixel 1");
+            $fatal(1, "FAIL: Consecutive pixel 1");
         else
             $display("PASS: Consecutive pixel 1");
 
@@ -221,7 +258,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd76)
-            $error("FAIL: Consecutive pixel 2");
+            $fatal(1, "FAIL: Consecutive pixel 2");
         else
             $display("PASS: Consecutive pixel 2");
 
@@ -233,7 +270,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd149)
-            $error("FAIL: Consecutive pixel 3");
+            $fatal(1, "FAIL: Consecutive pixel 3");
         else
             $display("PASS: Consecutive pixel 3");
 
@@ -245,7 +282,7 @@ module rgb2gray_axis_tb;
         #1;
         if (m_axis_tvalid !== 1'b1 ||
             m_axis_tdata !== 8'd28)
-            $error("FAIL: Consecutive pixel 4");
+            $fatal(1, "FAIL: Consecutive pixel 4");
         else
             $display("PASS: Consecutive pixel 4");
 
