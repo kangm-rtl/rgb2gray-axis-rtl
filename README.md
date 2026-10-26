@@ -108,5 +108,29 @@ The following test cases have passed in Vivado behavioral simulation:
 
 
 
-Synthesis results, timing results, and hardware-board validation have not yet been documented in this repository.
+Hardware-board validation have not yet been documented in this repository.
 
+## Synthesis and Timing Results
+
+### Clock Constraint
+- Clock name: `aclk`
+- Clock period: 10.000 ns
+- Clock frequency: 100 MHz (constraint setting)
+
+### Synthesis Resource Utilization
+- Slice LUTs: 90
+- Slice Registers: 10
+
+### Timing Summary
+- Worst Negative Slack (WNS): +7.572 ns
+- Total Negative Slack (TNS): 0.000 ns
+- Worst Hold Slack (WHS): +0.480 ns
+- Total Hold Slack (THS): 0.000 ns
+- Setup failing endpoints: 0
+- Hold failing endpoints: 0
+
+### Limitations
+- Timing results are based on the current 100 MHz clock constraint.
+- Input and output delay constraints have not yet been fully defined.
+- These results are from synthesis-stage timing analysis.
+- Post-implementation timing analysis and hardware validation remain future work.
